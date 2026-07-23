@@ -14,7 +14,7 @@ object StreamingApp {
     val fileReadingStream: Stream[IO, String] =
       fileReaderRepository
       .getLines(inputFilePath)
-      .map(_.value)
+      .map(rawData => rawData.value)
       .intersperse("\n")
 
     fileReadingStream
