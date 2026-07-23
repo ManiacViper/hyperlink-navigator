@@ -1,7 +1,5 @@
 package hyperlink.navigator
 
-package ice.finance
-
 import cats.effect.IO
 import fs2.io.file.{Files, Path}
 import fs2.{Stream, text}
