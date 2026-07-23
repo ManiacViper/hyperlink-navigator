@@ -13,13 +13,13 @@ object StreamingApp {
               resultsFilePath: String,
               fileReaderRepository: FileReaderRepository,
             ): IO[Unit] = {
-    val calculatedCommissionsStream: Stream[IO, String] =
+    val fileReadingStream: Stream[IO, String] =
       fileReaderRepository
       .getLines(inputFilePath)
       .map(_.value)
       .intersperse("\n")
 
-    calculatedCommissionsStream
+    fileReadingStream
       .through(text.utf8.encode)
       .through(Files[IO].writeAll(Path(resultsFilePath)))
       .compile
