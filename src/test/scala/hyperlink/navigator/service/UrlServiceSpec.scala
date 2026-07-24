@@ -1,15 +1,12 @@
 package hyperlink.navigator.service
 
-import cats.data.Kleisli
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
 import com.comcast.ip4s.IpLiteralSyntax
 import hyperlink.navigator.domain.HtmlPage
-import hyperlink.navigator.http.HttpClient
-import hyperlink.navigator.service.UrlServiceSpec.{testHtmlPage, withTestServerSetup}
-import org.http4s.{HttpRoutes, Request, Response}
+import hyperlink.navigator.service.UrlServiceSpec.withTestServerSetup
+import org.http4s.HttpRoutes
 import org.http4s.Response.http4sKleisliResponseSyntaxOptionT
-import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
@@ -18,13 +15,22 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.net.URI
+import scala.concurrent.duration.Duration
 
 class UrlServiceSpec extends AnyWordSpec with Matchers {
   "UrlService" should {
     "fetch html page" when {
       "url is valid" in {
-        withTestServerSetup("http://localhost:8080/test-api/html-page") { htmlPage =>
+        withTestServerSetup("/test-api/html-page") { case Right(htmlPage) =>
           htmlPage.document.title mustBe "Test page"
+        }
+      }
+    }
+
+    "fail" when {
+      "there is an invalid url" in {
+        withTestServerSetup("/does-not-exist") { case Left(exception) =>
+          exception.getMessage mustBe "unexpected HTTP status: 404 Not Found for request GET http://127.0.0.1:8080/does-not-exist"
         }
       }
     }
@@ -33,12 +39,13 @@ class UrlServiceSpec extends AnyWordSpec with Matchers {
 }
 
 object UrlServiceSpec {
-  val testHttpClient =
+  private val testHttpClient =
     EmberClientBuilder
       .default[IO]
+      .withIdleTimeInPool(Duration.Zero)
       .build
 
-  val testHtmlPage = """
+  private val testHtmlPage = """
       <!DOCTYPE html>
       <html lang="en">
         <head>
@@ -61,26 +68,27 @@ object UrlServiceSpec {
       }
       .orNotFound
 
-  val testServer: Resource[IO, Server] = EmberServerBuilder
+  private val testServer: Resource[IO, Server] = EmberServerBuilder
     .default[IO]
+    .withShutdownTimeout(Duration.Zero)
     .withHost(ipv4"127.0.0.1")
     .withPort(port"8080")
     .withHttpApp(testPageService)
     .build
 
-  def withTestServerSetup(uriString: String)(fn: HtmlPage => Unit): Unit = {
+  def withTestServerSetup(path: String)(fn: Either[Throwable, HtmlPage] => Unit): Unit = {
     (for {
       client <- testHttpClient
-      _      <- testServer
-    } yield client)
-      .use { client =>
-        IO {
-          val uri        = new URI(uriString)
-          val htmlResult = UrlService(client).fetch(uri)
-          htmlResult.map(fn(_))
-        }
-          .unsafeRunSync()
+      server <- testServer
+    } yield (client, server))
+      .use { case (client, server) =>
+        val uri = new URI(s"http://127.0.0.1:8080$path")
+        UrlService(client)
+          .fetch(uri)
+          .attempt
+          .map(fn)
       }
+      .unsafeRunSync()
   }
 
 }
