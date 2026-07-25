@@ -21,4 +21,4 @@ object ValidatedUrl {
 }
 
 case class HtmlPage(uri: URI, document: Document)
-case class ExtractedHyperlink(originalUri: URI, extractedHyperLinks: List[URI])
+case class ExtractedHyperlinks(originalUri: URI, extractedHyperLinks: List[URI])

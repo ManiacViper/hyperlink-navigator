@@ -1,6 +1,6 @@
 package hyperlink.navigator.service
 
-import hyperlink.navigator.domain.{ExtractedHyperlink, HtmlPage}
+import hyperlink.navigator.domain.{ExtractedHyperlinks, HtmlPage}
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -25,12 +25,13 @@ class HyperlinkExtractorServiceSpec extends AnyWordSpec with Matchers {
         val originalUri = URI.create("some-uri")
         val input       = HtmlPage(originalUri, jsoupBrowser.parseString(document))
         val result      = HyperlinkExtractorService().extract(input)
-        result must contain theSameElementsAs List(
-          ExtractedHyperlink(
-            originalUri,
-            List(URI.create("https://example.com/page1"), URI.create("/about"))
-          )
+
+        val expected = ExtractedHyperlinks(
+          originalUri,
+          List(URI.create("https://example.com/page1"), URI.create("/about"))
         )
+        result.originalUri mustBe expected.originalUri
+        result.extractedHyperLinks must contain theSameElementsAs expected.extractedHyperLinks
       }
     }
   }
