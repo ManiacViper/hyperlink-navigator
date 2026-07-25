@@ -12,11 +12,16 @@ trait HyperlinkExtractorService {
 object HyperlinkExtractorService {
   def apply(): HyperlinkExtractorService = new HyperlinkExtractorService {
     override def extract(htmlPage: HtmlPage): ExtractedHyperlinks = {
-      val maybeRawHyperlinks =
-        htmlPage.document >?>
-          elementList("a") >>
-          attr("href")
-            .map(URI.create)
+      val maybeRawHyperlinks: Option[List[URI]] = {
+        (htmlPage.document >?>
+          elementList("a") >?>
+          attr("href").map(URI.create))
+          .map { maybeHrefs =>
+            maybeHrefs.collect { case Some(uri) =>
+              uri
+            }
+          }
+      }
 
       ExtractedHyperlinks(htmlPage.uri, maybeRawHyperlinks.getOrElse(List.empty))
     }
