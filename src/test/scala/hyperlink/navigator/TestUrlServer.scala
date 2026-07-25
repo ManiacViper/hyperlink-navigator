@@ -4,8 +4,7 @@ import cats.data.Kleisli
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
 import com.comcast.ip4s.{IpLiteralSyntax, Port}
-import hyperlink.navigator.domain.HtmlPage
-import hyperlink.navigator.service.UrlService
+
 import org.http4s.dsl.io.{GET, Ok, Root}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.{HttpRoutes, Request, Response}
@@ -15,8 +14,9 @@ import org.http4s.Response._
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 
-import java.net.URI
 import scala.concurrent.duration.DurationInt
+import cats.syntax.traverse._
+import cats.instances.list._
 
 object TestUrlServer {
   private val testHtmlPage = """
@@ -84,17 +84,13 @@ object TestUrlServer {
   def withTestServerSetup(testServiceAndPort: List[TestServiceAndPort])(
                            fn: Client[IO] => Unit
                          ): Unit = {
-    val servers: Resource[IO, List[Server]] =
+    val servers =
       testServiceAndPort
         .map { case TestServiceAndPort(service, port) =>
           testServer(service, port)
         }
-        .foldLeft(Resource.pure[IO, List[Server]](List.empty)) { (acc, resource) =>
-          for {
-            servers <- acc
-            server  <- resource
-          } yield server :: servers
-        }
+        .sequence
+
     (for {
       client <- testHttpClient
       _ <- servers
