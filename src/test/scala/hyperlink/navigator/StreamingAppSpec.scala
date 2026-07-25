@@ -15,13 +15,7 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
   "StreamingApp" should {
     "read input urls and write extracted urls" when {
       "there are a list of input urls to process" in {
-        StreamingApp
-          .stream(
-            "test-urls.csv",
-            resultsFile,
-            FileReaderRepository(),
-            InputValidatorService()
-          )
+        StreamingApp.runStream
           .unsafeRunSync()
 
         val results = StreamingAppSpec.readResults(resultsFile).compile.toList.unsafeRunSync

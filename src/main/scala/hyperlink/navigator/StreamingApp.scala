@@ -4,18 +4,20 @@ import cats.effect.IO
 import cats.effect.std.Queue
 import fs2.io.file.{Files, Path}
 import fs2.{Stream, text}
-import hyperlink.navigator.domain.ValidatedUrl
+import hyperlink.navigator.domain.{HtmlPage, ValidatedUrl}
+import hyperlink.navigator.http.HttpClient
 import hyperlink.navigator.repository.FileReaderRepository
-import hyperlink.navigator.service.InputValidatorService
+import hyperlink.navigator.service.{InputValidatorService, UrlService}
 
 object StreamingApp {
-  def stream(
+  private def stream(
     inputFilePath: String,
     resultsFilePath: String,
     fileReaderRepository: FileReaderRepository,
-    inputValidatorService: InputValidatorService
+    inputValidatorService: InputValidatorService,
+    urlService: UrlService
   ): IO[Unit] = {
-    val boundedQueue = Queue.bounded[IO, Option[ValidatedUrl]](30)
+    val boundedQueue = Queue.bounded[IO, Option[HtmlPage]](30)
 
     boundedQueue.flatMap { queue =>
       val producer: Stream[IO, Unit] = fileReaderRepository
@@ -27,6 +29,7 @@ object StreamingApp {
           case Right(value) =>
             Stream.emit(value)
         }
+        .evalMap(url => urlService.fetch(url.uri))
         .evalMap(item => queue.offer(Option(item)))
         .onComplete(Stream.eval(queue.offer(None)))
 
@@ -41,6 +44,20 @@ object StreamingApp {
 
       consumer.concurrently(producer).compile.drain
     }
+  }
+
+  def runStream = {
+    (for {
+      httpClient <- HttpClient()
+      streamApp = StreamingApp.stream(
+        "urls.csv",
+        "extracted-urls.csv",
+        FileReaderRepository(),
+        InputValidatorService(),
+        UrlService(httpClient)
+      )
+    } yield streamApp)
+      .use(identity)
   }
 
 }
