@@ -13,6 +13,7 @@ trait UrlService {
 
 object UrlService {
   def apply(httpClient: Client[IO]): UrlService = new UrlService {
+    private val jsoupBrowser = JsoupBrowser()
     override def fetch(uri: URI): IO[HtmlPage] = {
       httpClient
         .expect[String](uri.toString)
