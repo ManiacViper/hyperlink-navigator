@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.effect.std.Queue
 import fs2.io.file.{Files, Path}
 import fs2.{Stream, text}
-import hyperlink.navigator.domain.{HtmlPage, ValidatedUrl}
+import hyperlink.navigator.domain.HtmlPage
 import hyperlink.navigator.http.HttpClient
 import hyperlink.navigator.repository.FileReaderRepository
 import hyperlink.navigator.service.{HyperlinkExtractorService, InputValidatorService, UrlService}
