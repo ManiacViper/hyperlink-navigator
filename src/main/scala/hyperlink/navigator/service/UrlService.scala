@@ -17,6 +17,7 @@ object UrlService {
     override def fetch(uri: URI): IO[HtmlPage] = {
       httpClient
         .expect[String](uri.toString)
+        // TODO: move to HyperlinkExtractorService
         .map { rawDocStr =>
           val doc = jsoupBrowser.parseString(rawDocStr)
           HtmlPage(uri, doc)

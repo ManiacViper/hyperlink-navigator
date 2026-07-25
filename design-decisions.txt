@@ -1,3 +1,5 @@
 - skipping urls that are not complete
 - skipping urls that return non 200 response
-- failure to parsing html pages can be skipped too
+- failure to parse html pages can be skipped too
+- we write original url that was fetched -> with list of hyperlinks found
+- even if no anchor tags are found, we write the original url that was fetched with empty hyperlinks list
