@@ -12,6 +12,7 @@ sbt test
 ```
 
 ### Run App
+Will produce `extracted-urls.csv` at the root 
 ```bash
 sbt run
 ```

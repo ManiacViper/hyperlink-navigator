@@ -1,5 +1,11 @@
+Some failure requirements:
 - skipping urls that are not complete
 - skipping urls that return non 200 response
 - failure to parse html pages can be skipped too
+
+Writing to results to extracted-url.csv file:
 - we write original url that was fetched -> with list of hyperlinks found
 - even if no anchor tags are found, we write the original url that was fetched with empty hyperlinks list
+
+Performance:
+- batching writes to file should increase performance
