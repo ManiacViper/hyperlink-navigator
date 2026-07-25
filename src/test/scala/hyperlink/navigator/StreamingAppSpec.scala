@@ -4,8 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import fs2.io.file.{Files, Path}
 import hyperlink.navigator.StreamingAppSpec.TestExtractedUrlResult
-import hyperlink.navigator.repository.FileReaderRepository
-import hyperlink.navigator.service.InputValidatorService
+import hyperlink.navigator.TestUrlServer.{testPageService, withTestServerSetup}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -14,18 +13,19 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
 
   "StreamingApp" should {
     "read input urls and write extracted urls" when {
-      "there are a list of input urls to process" in {
-        StreamingApp.runStream
-          .unsafeRunSync()
+      "an input url exists" in {
+        withTestServerSetup(testPageService, 8080) { _ =>
+          StreamingApp
+            .build("e2e-urls.csv", resultsFile)
+            .unsafeRunSync()
 
-        val results = StreamingAppSpec.readResults(resultsFile).compile.toList.unsafeRunSync
-        val expected =
-          List(
-            TestExtractedUrlResult("https://www.google.com/search?q=blog+websites"),
-            TestExtractedUrlResult("https://www.bing.com/search"),
-            TestExtractedUrlResult("https://www.duckduckgo.com/")
-          )
-        results mustBe expected
+          val results = StreamingAppSpec.readResults(resultsFile).compile.toList.unsafeRunSync
+          val expected =
+            List(
+              TestExtractedUrlResult("http://127.0.0.1:8080/test-api/html-page")
+            )
+          results mustBe expected
+        }
       }
     }
   }

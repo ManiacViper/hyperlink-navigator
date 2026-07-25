@@ -1,14 +1,9 @@
 package hyperlink.navigator
 
-package ice.finance
-
-import cats.effect.IOApp
-import hyperlink.navigator.StreamingApp.runStream
-import hyperlink.navigator.http.HttpClient
-import hyperlink.navigator.repository.FileReaderRepository
-import hyperlink.navigator.service.{InputValidatorService, UrlService}
+import cats.effect.{IO, IOApp}
+import hyperlink.navigator.StreamingApp.build
 
 object Main extends IOApp.Simple {
-  def run =
-    runStream
+  def run: IO[Unit] =
+    build("urls.csv", "extracted-urls.csv")
 }

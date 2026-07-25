@@ -46,18 +46,16 @@ object StreamingApp {
     }
   }
 
-  def runStream = {
-    (for {
-      httpClient <- HttpClient()
-      streamApp = StreamingApp.stream(
-        "urls.csv",
-        "extracted-urls.csv",
+  def build(inputUrlsPath: String, extractedUrlsPath: String): IO[Unit] = {
+    HttpClient().use { client =>
+      StreamingApp.stream(
+        inputUrlsPath,
+        extractedUrlsPath,
         FileReaderRepository(),
         InputValidatorService(),
-        UrlService(httpClient)
+        UrlService(client)
       )
-    } yield streamApp)
-      .use(identity)
+    }
   }
 
 }
