@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.effect.std.Queue
 import fs2.io.file.{Files, Path}
 import fs2.{Stream, text}
-import hyperlink.navigator.domain.HtmlPage
+import hyperlink.navigator.domain.RawHtmlPage
 import hyperlink.navigator.http.HttpClient
 import hyperlink.navigator.repository.FileReaderRepository
 import hyperlink.navigator.service.{HyperlinkExtractorService, InputValidatorService, UrlService}
@@ -18,7 +18,7 @@ object StreamingApp {
     urlService: UrlService,
     hyperlinkExtractorService: HyperlinkExtractorService
   ): IO[Unit] = {
-    val boundedQueue = Queue.bounded[IO, Option[HtmlPage]](30)
+    val boundedQueue = Queue.bounded[IO, Option[RawHtmlPage]](30)
 
     boundedQueue.flatMap { queue =>
       val producer: Stream[IO, Unit] = fileReaderRepository
@@ -33,7 +33,7 @@ object StreamingApp {
         .evalMap(url => urlService.fetch(url.uri).attempt)
         .flatMap {
           case Left(error) =>
-            Stream.exec(IO.println(s"Could not fetch url=$error"))
+            Stream.exec(IO.println(s"Could not fetch page for url, $error"))
           case Right(value) =>
             Stream.emit(value)
         }
@@ -43,6 +43,13 @@ object StreamingApp {
       val consumer: Stream[IO, Nothing] =
         Stream
           .fromQueueNoneTerminated(queue = queue, limit = 5)
+          .evalMap(item => IO(hyperlinkExtractorService.parse(item)))
+          .flatMap {
+            case Left(error) =>
+              Stream.exec(IO.println(s"Could not parse page for url, $error"))
+            case Right(value) =>
+              Stream.emit(value)
+          }
           .evalMap(item => IO(hyperlinkExtractorService.extract(item)))
           .evalTap(item => IO.println(item))
           .map(hyperlink =>

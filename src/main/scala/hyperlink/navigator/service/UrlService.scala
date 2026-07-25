@@ -1,26 +1,23 @@
 package hyperlink.navigator.service
 
 import cats.effect.IO
-import hyperlink.navigator.domain.HtmlPage
+import hyperlink.navigator.domain.RawHtmlPage
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 
 import java.net.URI
 import org.http4s.client.Client
 
 trait UrlService {
-  def fetch(uri: URI): IO[HtmlPage]
+  def fetch(uri: URI): IO[RawHtmlPage]
 }
 
 object UrlService {
   def apply(httpClient: Client[IO]): UrlService = new UrlService {
-    private val jsoupBrowser = JsoupBrowser()
-    override def fetch(uri: URI): IO[HtmlPage] = {
+    override def fetch(uri: URI): IO[RawHtmlPage] = {
       httpClient
         .expect[String](uri.toString)
-        // TODO: move to HyperlinkExtractorService
         .map { rawDocStr =>
-          val doc = jsoupBrowser.parseString(rawDocStr)
-          HtmlPage(uri, doc)
+          RawHtmlPage(uri, rawDocStr)
         }
 
     }

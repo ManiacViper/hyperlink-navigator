@@ -20,5 +20,6 @@ object ValidatedUrl {
   }
 }
 
+case class RawHtmlPage(uri: URI, rawDocument: String)
 case class HtmlPage(uri: URI, document: Document)
 case class ExtractedHyperlinks(originalUri: URI, extractedHyperLinks: List[URI])

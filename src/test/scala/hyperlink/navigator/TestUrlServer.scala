@@ -19,7 +19,7 @@ import cats.syntax.traverse._
 import cats.instances.list._
 
 object TestUrlServer {
-  private val testHtmlPage = """
+  val testHtmlPage = """
       <!DOCTYPE html>
       <html lang="en">
         <head>
