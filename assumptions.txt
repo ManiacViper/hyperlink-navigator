@@ -1,0 +1,2 @@
+- hyperlinks can only be found in anchor tags in href attribute
+- each url is a unique value

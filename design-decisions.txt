@@ -1,1 +1,3 @@
-- skipping urls that return non 200 response (this could have a dead letter queue of some kind in the future)
+- skipping urls that are not complete
+- skipping urls that return non 200 response
+- failure to parsing html pages can be skipped too
