@@ -4,7 +4,7 @@ import cats.data.Kleisli
 import cats.effect.unsafe.implicits.global
 import cats.effect.{IO, Resource}
 import com.comcast.ip4s.IpLiteralSyntax
-import hyperlink.navigator.TestUrlServer.{emptyHtmlPage, noHtmlPageService, testPageService, withTestServerSetup}
+import hyperlink.navigator.TestUrlServer.{TestServiceAndPort, emptyHtmlPage, noHtmlPageService, testPageService, withTestServerSetup}
 import hyperlink.navigator.domain.HtmlPage
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import org.http4s.Response.http4sKleisliResponseSyntaxOptionT
@@ -23,7 +23,7 @@ class UrlServiceSpec extends AnyWordSpec with Matchers {
   "UrlService" should {
     "fetch html page" when {
       "url is valid" in {
-        withTestServerSetup(testPageService) { client =>
+        withTestServerSetup(List(TestServiceAndPort(testPageService, 8081))) { client =>
           val Right(result) = UrlService(client).fetch(URI.create("http://127.0.0.1:8081/test-api/html-page")).attempt.unsafeRunSync()
           result.uri mustBe new URI("http://127.0.0.1:8081/test-api/html-page")
           result.document.title mustBe "Test page"
@@ -31,7 +31,7 @@ class UrlServiceSpec extends AnyWordSpec with Matchers {
       }
 
       "there is no response body" in {
-        withTestServerSetup(noHtmlPageService) { client =>
+        withTestServerSetup(List(TestServiceAndPort(noHtmlPageService, 8081))) { client =>
           val Right(result) = UrlService(client).fetch(URI.create("http://127.0.0.1:8081/test-api/empty-html-page")).attempt.unsafeRunSync()
 
           result.uri mustBe new URI("http://127.0.0.1:8081/test-api/empty-html-page")
@@ -42,7 +42,7 @@ class UrlServiceSpec extends AnyWordSpec with Matchers {
 
     "fail" when {
       "there is a non-200 code" in {
-        withTestServerSetup(testPageService) { client =>
+        withTestServerSetup(List(TestServiceAndPort(testPageService, 8081))) { client =>
           val Left(exception) = UrlService(client).fetch(URI.create("http://127.0.0.1:8081/does-not-exist")).attempt.unsafeRunSync()
           exception.getMessage mustBe "unexpected HTTP status: 404 Not Found for request GET http://127.0.0.1:8081/does-not-exist"
         }

@@ -1,0 +1,1 @@
+- skipping urls that return non 200 response (this could have a dead letter queue of some kind in the future)

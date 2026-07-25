@@ -25,11 +25,17 @@ object StreamingApp {
         .map(rawData => inputValidatorService.validateRow(rawData.value))
         .flatMap {
           case Left(error) =>
-            Stream.exec(IO.println(s"File error=$error"))
+            Stream.exec(IO.println(s"Input Url error=$error"))
           case Right(value) =>
             Stream.emit(value)
         }
-        .evalMap(url => urlService.fetch(url.uri))
+        .evalMap(url => urlService.fetch(url.uri).attempt)
+        .flatMap {
+          case Left(error) =>
+            Stream.exec(IO.println(s"Could not fetch url=$error"))
+          case Right(value) =>
+            Stream.emit(value)
+        }
         .evalMap(item => queue.offer(Option(item)))
         .onComplete(Stream.eval(queue.offer(None)))
 

@@ -52,6 +52,14 @@ object TestUrlServer {
         Ok()
       }
       .orNotFound
+
+  val non200: Kleisli[IO, Request[IO], Response[IO]] =
+    HttpRoutes
+      .of[IO] { case GET -> Root / "test-api" / "moved" =>
+        MovedPermanently()
+      }
+      .orNotFound
+
   private val testHttpClient =
     EmberClientBuilder
       .default[IO]
@@ -71,15 +79,25 @@ object TestUrlServer {
       .build
   }
 
-  def withTestServerSetup(
-                           service: Kleisli[IO, Request[IO], Response[IO]],
-                           port: Int = 8081
-                         )(
+  case class TestServiceAndPort(service: Kleisli[IO, Request[IO], Response[IO]], port: Int)
+
+  def withTestServerSetup(testServiceAndPort: List[TestServiceAndPort])(
                            fn: Client[IO] => Unit
                          ): Unit = {
+    val servers: Resource[IO, List[Server]] =
+      testServiceAndPort
+        .map { case TestServiceAndPort(service, port) =>
+          testServer(service, port)
+        }
+        .foldLeft(Resource.pure[IO, List[Server]](List.empty)) { (acc, resource) =>
+          for {
+            servers <- acc
+            server  <- resource
+          } yield server :: servers
+        }
     (for {
       client <- testHttpClient
-      _      <- testServer(service, port)
+      _ <- servers
     } yield client)
       .use { client =>
         IO(fn(client))
