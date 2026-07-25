@@ -30,6 +30,8 @@ object TestUrlServer {
             <body>
               <div id="header">
                 <h1>Some Test page h1</h1>
+                   <a href="https://first-url.com">Page 1</a>
+                   <a href="/another-url">About</a>
               </div>
             </body>
       </html>
@@ -66,9 +68,9 @@ object TestUrlServer {
       .withIdleTimeInPool(1.second)
       .build
   private def testServer(
-                          service: Kleisli[IO, Request[IO], Response[IO]],
-                          port: Int
-                        ): Resource[IO, Server] = {
+    service: Kleisli[IO, Request[IO], Response[IO]],
+    port: Int
+  ): Resource[IO, Server] = {
     val portObj = Port.fromInt(port)
     EmberServerBuilder
       .default[IO]
@@ -82,18 +84,16 @@ object TestUrlServer {
   case class TestServiceAndPort(service: Kleisli[IO, Request[IO], Response[IO]], port: Int)
 
   def withTestServerSetup(testServiceAndPort: List[TestServiceAndPort])(
-                           fn: Client[IO] => Unit
-                         ): Unit = {
+    fn: Client[IO] => Unit
+  ): Unit = {
     val servers =
-      testServiceAndPort
-        .map { case TestServiceAndPort(service, port) =>
-          testServer(service, port)
-        }
-        .sequence
+      testServiceAndPort.map { case TestServiceAndPort(service, port) =>
+        testServer(service, port)
+      }.sequence
 
     (for {
       client <- testHttpClient
-      _ <- servers
+      _      <- servers
     } yield client)
       .use { client =>
         IO(fn(client))

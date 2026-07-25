@@ -4,7 +4,13 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import fs2.io.file.{Files, Path}
 import hyperlink.navigator.StreamingAppSpec.TestExtractedUrlResult
-import hyperlink.navigator.TestUrlServer.{TestServiceAndPort, noHtmlPageService, non200, testPageService, withTestServerSetup}
+import hyperlink.navigator.TestUrlServer.{
+  TestServiceAndPort,
+  noHtmlPageService,
+  non200,
+  testPageService,
+  withTestServerSetup
+}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -22,7 +28,10 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
           val results = StreamingAppSpec.readResults(resultsFile).compile.toList.unsafeRunSync
           val expected =
             List(
-              TestExtractedUrlResult("http://127.0.0.1:8080/test-api/html-page")
+              TestExtractedUrlResult(
+                "http://127.0.0.1:8080/test-api/html-page",
+                "https://first-url.com | /another-url"
+              )
             )
           results mustBe expected
         }
@@ -31,7 +40,9 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
 
     "skip urls" when {
       "an input url fails" in {
-        withTestServerSetup(List(TestServiceAndPort(testPageService, 8090), TestServiceAndPort(non200, 8080))) { _ =>
+        withTestServerSetup(
+          List(TestServiceAndPort(testPageService, 8090), TestServiceAndPort(non200, 8080))
+        ) { _ =>
           StreamingApp
             .build("multiple-e2e-urls.csv", resultsFile)
             .unsafeRunSync()
@@ -39,7 +50,10 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
           val results = StreamingAppSpec.readResults(resultsFile).compile.toList.unsafeRunSync
           val expected =
             List(
-              TestExtractedUrlResult("http://127.0.0.1:8090/test-api/html-page")
+              TestExtractedUrlResult(
+                "http://127.0.0.1:8090/test-api/html-page",
+                "https://first-url.com | /another-url"
+              )
             )
           results mustBe expected
         }
@@ -51,12 +65,13 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
 }
 
 object StreamingAppSpec {
-  private case class TestExtractedUrlResult(url: String)
+  private case class TestExtractedUrlResult(url: String, hyperlinks: String)
   private def readResults(path: String) = {
     Files[IO]
       .readUtf8Lines(Path(path))
-      .map { line: String =>
-        TestExtractedUrlResult(line)
+      .map(_.split(","))
+      .map { case Array(originalUrl, hyperlinks) =>
+        TestExtractedUrlResult(originalUrl, hyperlinks)
       }
       .evalTap { _ =>
         Files[IO].deleteIfExists(Path(path))

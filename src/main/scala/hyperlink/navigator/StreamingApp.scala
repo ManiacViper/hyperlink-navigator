@@ -7,7 +7,7 @@ import fs2.{Stream, text}
 import hyperlink.navigator.domain.{HtmlPage, ValidatedUrl}
 import hyperlink.navigator.http.HttpClient
 import hyperlink.navigator.repository.FileReaderRepository
-import hyperlink.navigator.service.{InputValidatorService, UrlService}
+import hyperlink.navigator.service.{HyperlinkExtractorService, InputValidatorService, UrlService}
 
 object StreamingApp {
   private def stream(
@@ -15,7 +15,8 @@ object StreamingApp {
     resultsFilePath: String,
     fileReaderRepository: FileReaderRepository,
     inputValidatorService: InputValidatorService,
-    urlService: UrlService
+    urlService: UrlService,
+    hyperlinkExtractorService: HyperlinkExtractorService
   ): IO[Unit] = {
     val boundedQueue = Queue.bounded[IO, Option[HtmlPage]](30)
 
@@ -42,8 +43,11 @@ object StreamingApp {
       val consumer: Stream[IO, Nothing] =
         Stream
           .fromQueueNoneTerminated(queue = queue, limit = 5)
+          .evalMapChunk(item => IO(hyperlinkExtractorService.extract(item)))
           .evalTap(item => IO.println(item))
-          .map(_.uri.toString)
+          .map(hyperlink =>
+            s"${hyperlink.originalUri},${hyperlink.extractedHyperLinks.mkString(" | ")}"
+          )
           .intersperse("\n")
           .through(text.utf8.encode)
           .through(Files[IO].writeAll(Path(resultsFilePath)))
@@ -59,7 +63,8 @@ object StreamingApp {
         extractedUrlsPath,
         FileReaderRepository(),
         InputValidatorService(),
-        UrlService(client)
+        UrlService(client),
+        HyperlinkExtractorService()
       )
     }
   }
