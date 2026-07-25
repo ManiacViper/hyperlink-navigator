@@ -18,8 +18,7 @@ object UrlService {
       httpClient
         .expect[String](uri.toString)
         .map { rawDocStr =>
-          val jsoupBrowser = JsoupBrowser()
-          val doc          = jsoupBrowser.parseString(rawDocStr)
+          val doc = jsoupBrowser.parseString(rawDocStr)
           HtmlPage(uri, doc)
         }
 
