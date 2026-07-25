@@ -49,6 +49,8 @@ object StreamingApp {
             s"${hyperlink.originalUri},${hyperlink.extractedHyperLinks.mkString(" | ")}"
           )
           .intersperse("\n")
+          .chunkN(50)
+          .map(_.toList.mkString(""))
           .through(text.utf8.encode)
           .through(Files[IO].writeAll(Path(resultsFilePath)))
 
