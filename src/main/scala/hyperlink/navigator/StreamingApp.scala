@@ -43,7 +43,7 @@ object StreamingApp {
       val consumer: Stream[IO, Nothing] =
         Stream
           .fromQueueNoneTerminated(queue = queue, limit = 5)
-          .evalMapChunk(item => IO(hyperlinkExtractorService.extract(item)))
+          .evalMap(item => IO(hyperlinkExtractorService.extract(item)))
           .evalTap(item => IO.println(item))
           .map(hyperlink =>
             s"${hyperlink.originalUri},${hyperlink.extractedHyperLinks.mkString(" | ")}"
