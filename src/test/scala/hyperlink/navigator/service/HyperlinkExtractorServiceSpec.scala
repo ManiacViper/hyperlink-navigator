@@ -34,7 +34,7 @@ class HyperlinkExtractorServiceSpec extends AnyWordSpec with Matchers {
         result.extractedHyperLinks must contain theSameElementsAs expected.extractedHyperLinks
       }
 
-      "there are anchor tags without href attribute" in {
+      "there are some anchor tags without href attribute" in {
         val document =
           """
             |<html>
@@ -54,6 +54,28 @@ class HyperlinkExtractorServiceSpec extends AnyWordSpec with Matchers {
         )
         result.originalUri mustBe expected.originalUri
         result.extractedHyperLinks must contain theSameElementsAs expected.extractedHyperLinks
+      }
+    }
+
+    "return empty hyperlinks with original url" when {
+      "no anchor tags exist" in {
+        val document =
+          """
+            |<html>
+            |  <body>
+            |  </body>
+            |</html>
+            |""".stripMargin
+        val originalUri = URI.create("some-uri")
+        val input       = HtmlPage(originalUri, jsoupBrowser.parseString(document))
+        val result      = HyperlinkExtractorService().extract(input)
+
+        val expected = ExtractedHyperlinks(
+          originalUri,
+          List(URI.create("https://example.com/page1"))
+        )
+        result.originalUri mustBe expected.originalUri
+        result.extractedHyperLinks must contain theSameElementsAs List.empty
       }
     }
   }
