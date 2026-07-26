@@ -12,7 +12,7 @@ object HttpClient {
     EmberClientBuilder
       .default[IO]
       .withTimeout(5.seconds)
-      .withMaxTotal(20)
+      .withMaxTotal(10)
       .withMaxPerKey(_ => 2)
       .build
 

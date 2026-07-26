@@ -6,7 +6,6 @@ import fs2.io.file.{Files, Path}
 import hyperlink.navigator.StreamingAppSpec.TestExtractedUrlResult
 import hyperlink.navigator.TestUrlServer.{
   TestServiceAndPort,
-  noHtmlPageService,
   non200,
   testPageService,
   withTestServerSetup

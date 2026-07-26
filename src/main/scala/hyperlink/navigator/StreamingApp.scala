@@ -18,9 +18,8 @@ object StreamingApp {
     urlService: UrlService,
     hyperlinkExtractorService: HyperlinkExtractorService
   ): IO[Unit] = {
-    val boundedQueue      = Queue.bounded[IO, Option[RawHtmlPage]](30)
-    val concurrentFetches = 20
-
+    val boundedQueue      = Queue.bounded[IO, Option[RawHtmlPage]](50)
+    val concurrentFetches = 10
     boundedQueue.flatMap { queue =>
       val producer: Stream[IO, Unit] = fileReaderRepository
         .getLines(inputFilePath)
@@ -43,7 +42,7 @@ object StreamingApp {
 
       val consumer: Stream[IO, Nothing] =
         Stream
-          .fromQueueNoneTerminated(queue = queue, limit = 5)
+          .fromQueueNoneTerminated(queue = queue, limit = 10)
           .evalMap(item => IO(hyperlinkExtractorService.parse(item)))
           .flatMap {
             case Left(error) =>

@@ -37,11 +37,7 @@ object HyperlinkExtractorService {
     override def parse(rawHtmlPage: RawHtmlPage): Either[String, HtmlPage] = {
       Try(jsoupBrowser.parseString(rawHtmlPage.rawDocument)).toEither
         .leftMap { ex =>
-          val test = s"Page for [Url=${rawHtmlPage.uri}] has an error, ${ex.getMessage}"
-          println("Kenneth *******************")
-          println(test)
-          println("Kenneth *******************")
-          test
+          s"Page for [Url=${rawHtmlPage.uri}] has an error, ${ex.getMessage}"
         }
         .map(document => HtmlPage(rawHtmlPage.uri, document))
     }
