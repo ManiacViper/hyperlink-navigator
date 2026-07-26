@@ -9,3 +9,9 @@ Writing to results to extracted-url.csv file:
 
 Performance:
 - batching writes to file should increase performance
+
+Potential future improvements:
+- according to how much cpu is being used,
+we could give some cpu cores to the parsing and finding a href in case they turn out to use a lot of cpu as they are cpu bound
+- depending on how much memory is free, we could increase the concurrency further for the http fetches of html pages on our client
+- Chunking the items and then parsing and finding hyperlinks for one chunk could be a possibility in the consumer
