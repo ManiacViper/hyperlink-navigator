@@ -12,6 +12,7 @@ Performance:
 
 Potential future improvements:
 - according to how much cpu is being used,
-we could portion out cpu cores to the parsing and finding a href in case and run them concurrently as they are cpu bound
+we could portion out cpu cores to the parsing and finding a href in case and run them concurrently as they are cpu bound.
+This means that maybe 70% of cores could be divided between parsing and finding the href where the ratio would depend on what needs the most concurrent cpus the most
 - depending on how much memory is free, we could increase the concurrency further for the http fetches of html pages on our client
 - Chunking the items and then parsing and finding hyperlinks for one chunk could be a possibility in the consumer
