@@ -18,7 +18,8 @@ object StreamingApp {
     urlService: UrlService,
     hyperlinkExtractorService: HyperlinkExtractorService
   ): IO[Unit] = {
-    val boundedQueue = Queue.bounded[IO, Option[RawHtmlPage]](30)
+    val boundedQueue      = Queue.bounded[IO, Option[RawHtmlPage]](30)
+    val concurrentFetches = 20
 
     boundedQueue.flatMap { queue =>
       val producer: Stream[IO, Unit] = fileReaderRepository
@@ -30,7 +31,7 @@ object StreamingApp {
           case Right(value) =>
             Stream.emit(value)
         }
-        .evalMap(url => urlService.fetch(url.uri).attempt)
+        .parEvalMapUnordered(concurrentFetches)(url => urlService.fetch(url.uri).attempt)
         .flatMap {
           case Left(error) =>
             Stream.exec(IO.println(s"Could not fetch page for url, $error"))
