@@ -38,8 +38,8 @@ class StreamingAppSpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "skip urls" when {
-      "an input url fails" in {
+    "skip failed url" when {
+      "it fails" in {
         withTestServerSetup(
           List(TestServiceAndPort(testPageService, 8090), TestServiceAndPort(non200, 8080))
         ) { _ =>
